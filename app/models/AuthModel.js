@@ -1,16 +1,12 @@
-const AppModel = require("./AppModel");
+const AppModel = require("@models/AppModel");
+
 class AuthModel extends AppModel{
+    static table = 'users';
     
     constructor() {
-        super();
-
-        this.table = {
-            users: "users"
-        };
+        super(); 
     }
  
 }
 
 module.exports = AuthModel;
-
-

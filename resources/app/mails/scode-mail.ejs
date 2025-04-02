@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title><%= notification_title %></title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 100%;
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .header {
+            background-color: #4CAF50;
+            color: #ffffff;
+            padding: 20px;
+            text-align: center;
+        }
+        .content {
+            padding: 20px;
+        }
+        .footer {
+            background-color: #f1f1f1;
+            padding: 10px;
+            text-align: center;
+            font-size: 12px;
+        }
+        .disclaimer {
+            color: #666666;
+            font-size: 10px;
+            margin-top: 10px;
+        }
+        .button {
+            background-color: #4CAF50;
+            color: #ffffff;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+        .placeholder {
+            font-weight: bold;
+            color: #333333;
+        }
+        .code-box {
+            background-color: #e7f3fe;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            font-size: 24px;
+            text-align: center;
+            letter-spacing: 5px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="placeholder"><%= notification_title %></h1>
+        </div>
+        <div class="content">
+            <p class="placeholder">Hello <%= recipient_name %>,</p>
+            <p>To continue your login process, please enter the following verification code:</p>
+            
+            <div class="code-box">
+                <%= verification_code %>
+            </div>
+            
+            <p>This code is valid for <%= validity_period %> minutes. If you did not request this code, please ignore this email or contact us immediately.</p>
+            
+            <a href="<%= support_link %>" class="button placeholder">Contact Support</a>
+        </div>
+        <div class="footer">
+            <p>Best regards,</p>
+            <p><%= company_name %> Team</p> 
+        </div>
+    </div>
+</body>
+</html>

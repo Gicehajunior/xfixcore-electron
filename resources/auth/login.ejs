@@ -1,0 +1,53 @@
+<!-- header -->
+<%- include(res_path + '/layouts/web/header') %>
+<!-- /header -->
+
+        <!-- body -->
+        <div class="card border-0 auth-login-card">
+            <div class="card-header">
+                Sign In
+            </div>
+            <div class="card-body container">  
+                <div style="margin: 0 auto;" class="justify-content-center container w-50"> 
+                    <form method="post" enctype="multipart/form-data" class="login_user_form">
+                        <p id="pout"></p>
+                        <div class="form-group mb-3 users_message" id="users_message"></div>
+                        <div class="form-group mb-3">
+                            <label for="Username">Email</label>
+                            <input type="text" name="email" id="email" class="form-control" placeholder="Enter email address" autofocus autocomplete="on" aria-describedby="helpId" required="required">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="Password">Password</label>
+                            <input type="password" name="password" id="password" class="form-control" placeholder="Enter Password" autocomplete="on" aria-describedby="helpId" required="required">
+                            <small id="helpId" class="text-muted">Note: Valid Password</small>
+                        </div>
+                        <div class="form-group mb-3">
+                            <div class="form-check form-check-inline">
+                                <label class="form-check-label">
+                                    <input class="form-check-input" type="checkbox" name="" id="" value="checkedValue"> Remember me
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-3 float-right">
+                            <button type="button" id="btn-login" class="btn btn-sm btn-primary btn-login">Sign In</button>
+                        </div>
+                        <div class="footer-text pt-5">
+                            <p>
+                                Don't have an account? Click <a href="/signup">here</a>
+                            </p>
+                        </div>
+                        <div class="footer-text pt-2">
+                            <p>
+                                Forgot your password? Click <a href="/forgotpassword">here</a>
+                            </p>
+                        </div>
+                    </form>
+                </div> 
+            </div>
+        </div>
+        <!-- /body -->
+       
+<!-- footer -->
+<%- include(res_path + '/layouts/web/footer') %>
+<!-- /footer -->

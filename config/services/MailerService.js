@@ -1,7 +1,8 @@
 "use strict";
 require('dotenv').config();
-const mail = require('../app/mail');
-const Nodemailer = require("nodemailer");  
+const mail = require('@config/app/mail');
+const Nodemailer = require("nodemailer");
+  
 class Mailer {
     constructor(
         mail_host = undefined, 
@@ -19,11 +20,29 @@ class Mailer {
         this.email_password = (mail.source.email_password) ? mail.source.email_password : email_password;
     }
 
-    async send(recipients=[], subject, html_message_formart, text_message_formart = undefined) {  
+    async send(recipients=[], subject, html_message_formart, text_message_formart = undefined, attachments=undefined) {  
         // create reusable transporter object using the default SMTP transport
         let response = undefined;
 
         try {
+            let attachments_array = [];
+            
+            if (attachments !== undefined && Array.isArray(attachments)) {
+                attachments.forEach(file => {
+                    if (typeof file === 'string') { 
+                        attachments_array.push({
+                            filename: file.split('/').pop(),
+                            path: file
+                        });
+                    } else if (file && file.filename && file.content) { 
+                        attachments_array.push({
+                            filename: file.filename,
+                            content: file.content 
+                        });
+                    }
+                });
+            }
+
             let transporter = Nodemailer.createTransport({
                 host: this.mail_host,
                 port: this.mail_port,
@@ -36,15 +55,16 @@ class Mailer {
      
             const response_promise = await transporter.sendMail({
                 from: `${this.email_username} <${this.mail_source_address}>`, // sender address
-                to: [recipients], // list of receivers
+                to: Array.isArray(recipients) ? recipients : [recipients], // list of receivers
                 subject: subject, // Subject line
-                text: text_message_formart, // plain text body
-                html: html_message_formart, // html body
-                attachments: undefined
+                text: text_message_formart?.length > 0 ? String(text_message_formart) : '', // plain text body
+                html: html_message_formart?.length > 0 ? String(html_message_formart) : '', // html body
+                attachments: attachments_array?.length > 0 ? attachments_array : undefined
             }); 
 
             response = response_promise;  
         } catch (error) {
+            console.log(`MAIL SERVICE ERROR: ${error}`);
             response = false;
         } 
 

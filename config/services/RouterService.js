@@ -1,7 +1,7 @@
 const fs = require('fs'); 
 const electron = require("electron"); 
-const Helper = require('../../app/Helpers/Helper');
-const ExceptionHandler = require('../../app/Exceptions/handler'); 
+const func = require('@helper/func');
+const ExceptionHandler = require('@exception/handler'); 
 const { app, contextBridge, BrowserWindow, ipcMain } = electron; 
 
 class RouterService {
@@ -9,6 +9,7 @@ class RouterService {
         this.BrowserWindow = BrowserWindow;
         this.ipcMain = ipcMain;
         this.DBConnection = DbConn;
+        this.route = undefined;
         this.controller = undefined;
         this.method_name = undefined;
         this.response_medium = undefined;
@@ -23,25 +24,31 @@ class RouterService {
     get(route, controller, response_medium = undefined) {
         this.get_route(route, controller, response_medium);
     }
-
-    post_route(route, controller, response_medium = undefined) { 
-        this.ipcMain.handle(route, (event, data) => {  
-            try {
-                this.route_process(controller, response_medium, event, data);
-            } catch (error) {
-                console.log(error);
-            }
-        });
-    } 
-
-    get_route(route, controller, response_medium = undefined) { 
-        this.ipcMain.on(route, (event, data) => {  
-            try {
-                this.route_process(controller, response_medium, event, data);
-            } catch (error) {
-                console.log(error);
-            }
-        });
+    
+    post_route(route, controller, response_medium = undefined) {
+        if (!this.ipcMain.listenerCount(route)) {
+            this.ipcMain.handle(route, async (event, data) => {  
+                try {
+                    this.route = route;
+                    this.route_process(controller, response_medium, event, data);
+                } catch (error) {
+                    console.log(error);
+                }
+            });
+        }
+    }
+    
+    get_route(route, controller, response_medium = undefined) {
+        if (!this.ipcMain.listenerCount(route)) {
+            this.ipcMain.once(route, async (event, data) => {  
+                try {
+                    this.route = route; 
+                    this.route_process(controller, response_medium, event, data);
+                } catch (error) {
+                    console.log(error);
+                }
+            });
+        }
     }
 
     route_process(controller, response_medium, event, data = {}) {
@@ -53,7 +60,7 @@ class RouterService {
 
         if (!this.controller.includes('Controller')) {  
             if (this.controller == 'helper') {
-                (new Helper(this.BrowserWindow)).showAlertDialog(data);
+                (new func(this.BrowserWindow)).showAlertDialog(data);
             }
             else {
                 app.on('error', function(error) {
@@ -90,6 +97,7 @@ class RouterService {
         if (response instanceof Promise) {
             Promise.resolve(response).then(value => {  
                 if (value) {
+                    value.route = this.route;
                     event.sender.send(response_medium, `${JSON.stringify(value)}`);
                 } 
             }); 

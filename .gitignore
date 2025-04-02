@@ -1,7 +1,9 @@
 .env
 tests
+.DS_Store
 node_modules/
-public/assets/bootstrap
+public/assets
+public/bootstrap
 public/assets/jquery
 config/database/dump/*.sql
 config/database/dump/*.db

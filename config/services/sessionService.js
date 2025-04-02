@@ -1,5 +1,6 @@
-const StoreService = require("./StoreService");
 const fs = require("fs").promises;
+const StoreService = require("@config/services/StoreService");
+
 class UserSession {
     constructor() {
         this.current_directory = process.cwd(); 
@@ -23,25 +24,23 @@ class UserSession {
         const store_response = this.StoreService.set(object);
 
         return store_response;
+    } 
+
+    async delete_session() {
+        try {
+            const session_file = this.StoreService.get_data_path(); 
+            await fs.access(session_file); 
+            await fs.unlink(session_file);
+            return true;
+        } catch (err) {
+            if (err.code === 'ENOENT') { 
+                return false;
+            } else { 
+                console.error(`Error occurred while trying to remove file: ${err.message}`);
+                throw new Error(`Error occurred while trying to remove file: ${err.message}`);
+            }
+        }
     }
-
-    delete_session() {
-        const response_promise = new Promise((resolve, reject) => {
-            let session_file = this.StoreService.get_data_path();
-            fs.unlink(`${session_file}`, (err) => {
-                if(err && err.code == 'ENOENT') { 
-                    resolve("File doesn't exist, won't remove it.");
-                } else if (err) { 
-                    reject("Error occurred while trying to remove file");
-                } else {
-                    resolve(`User Session Cleared. User got logged out!`);
-                }
-            });
-        });
-
-        return response_promise;
-    }
-
 }
 
 module.exports = UserSession;

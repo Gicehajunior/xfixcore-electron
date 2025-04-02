@@ -1,4 +1,4 @@
 {
-    "directory": "./public/assets",
+    "directory": "./public/bootstrap",
     "strict-ssl": true
 }

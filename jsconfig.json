@@ -1,9 +1,18 @@
 {
     "compilerOptions": {
         "baseUrl": "./",
+        "checkJs": false,
         "paths": {
-            "*": ["*"]
+            "@app/*": ["app/*"],
+            "@config/*": ["config/*"],
+            "@exception/*": ["app/Exceptions/*"],
+            "@helper/*": ["app/Helpers/*"],
+            "@models/*": ["app/models/*"],
+            "@utils/*": ["app/utils/*"],
+            "@controllers/*": ["app/controllers/*"],
+            "@preload/*": ["public/js/preloads/*"],
+            "@routes/*": ["routes/*"]
         }
     },
-    "include": ["public/js/*"]
+  "include": ["app/**/*", "public/js/**/*"]
 }

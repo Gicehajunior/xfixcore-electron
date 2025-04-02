@@ -1,0 +1,40 @@
+
+
+    <footer>
+        <div style="background-color: #EEEEEE;" class="center w-100 fixed-bottom">
+            <p class="text-center pt-3"><app-name class="app-name" id="app-name"><%- lang.footer_app_name ? lang.footer_app_name : '' %></app-name> <%- lang.footer_rights_tag_line ? lang.footer_rights_tag_line : '' %></p>
+        </div>
+    </footer>
+
+    <!-- include jquery -->
+    <script type="application/javascript" src="<%= asset_path %>/public/assets/jquery/js/jquery.js"></script> 
+
+    <!-- include bootstrap js -->
+    <script type="application/javascript" src="<%= asset_path %>/public/bootstrap/js/select2.js"></script>
+    <script type="application/javascript" src="<%= asset_path %>/public/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script type="application/javascript" src="<%= asset_path %>/public/bootstrap/js/bootstrap-datepicker.js"></script>
+
+    <!-- font awesome js -->
+    <script type="application/javascript" src="<%= asset_path %>/public/assets/fontawesome/js/all.js"></script> 
+
+    <!-- toastr js library --> 
+    <script type="application/javascript" src="<%= asset_path %>/public/assets/toastr/js/toastr.min.js"></script>
+
+    <!-- DataTables --> 
+    <script type="application/javascript" src="<%= asset_path %>/public/assets/jquery/js/jquery.dataTables.js"></script>
+
+    <!-- printing library --> 
+    <script type="application/javascript" src="<%= asset_path %>/public/assets/printjs/js/print.js"></script>
+
+    <!-- Page JS --> 
+    <script type="application/javascript" src="<%= asset_path %>/public/assets/sweetalert/js/sweetalert2.js"></script>
+
+    <!-- chart js -->
+    <script type="application/javascript" src="<%= asset_path %>/public/assets/charts/js/chart.umd.js"></script>
+
+    <!-- local js script -->
+    <script type="application/javascript" src="<%= asset_path %>/public/js/renderer/functions.js" defer></script>
+    <script type="application/javascript" src="<%= asset_path %>/public/js/renderer/globals.js" defer></script>
+    <script type="application/javascript" src="<%= asset_path %>/public/js/renderer/src/auth.js" defer></script>
+    </body>
+</html>

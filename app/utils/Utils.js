@@ -1,5 +1,5 @@
 require('dotenv').config();
-const DB = require('../../config/DB');
+const DB = require('@config/DB');
 class Util { 
     constructor() {   
         this.database_type = process.env.DB_CONNECTION; 
@@ -16,7 +16,7 @@ class Util {
         } 
 
         this.database_table = table; 
-        this.select_query = `SELECT ${this.columns} FROM ${this.database_table}`;
+        return this.select_query = `SELECT ${this.columns} FROM ${this.database_table}`;
     }
 
     _select_query(values, query = undefined) {

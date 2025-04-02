@@ -1,21 +1,12 @@
-const AppModel = require("./AppModel"); 
+const AppModel = require("@models/AppModel"); 
 
 class DashboardModel extends AppModel{
-    
+    static table = 'users';
+
     constructor() {
         super(); 
     }
 
-    database_table() {
-        const table = [
-            "users"
-        ];
-
-        return table;
-    }
- 
 }
 
 module.exports = DashboardModel;
-
-

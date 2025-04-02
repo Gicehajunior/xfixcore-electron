@@ -1,4 +1,4 @@
-const RouterService = require("../config/services/RouterService");
+const RouterService = require("@config/services/RouterService");
 
 /**
  * PUT your routes here, 
@@ -13,13 +13,17 @@ const Routes = (BrowserWindow, ipcMain) => {
 
     Router.post('createTable', 'AuthController@createTable', "create-table"); 
 
+    Router.get('/signup', 'AuthController@registerUser'); 
+    Router.get('/login', 'AuthController@loginUser'); 
     Router.post('loginUser', 'AuthController@loginUsers', "login-response");
     Router.post('registerUser', 'AuthController@saveUsers', "save-users");
 
+    Router.get('/forgotpassword', 'AuthController@forgotPasswordView'); 
+    Router.get('/resetpassword', 'AuthController@resetPasswordView'); 
     Router.post('/forgot-password', 'AuthController@forgotPassword', "forgot-password-response");
-    Router.post('/reset-password', 'AuthController@ResetPassword', "reset-password-response");
+    Router.post('/reset-password', 'AuthController@resetPassword', "reset-password-response");
 
-    Router.post('logoutUser', 'AuthController@logoutUser');
+    Router.post('/logoutUser', 'AuthController@logoutUser');
 } 
 
 module.exports = Routes;
