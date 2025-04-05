@@ -5,6 +5,7 @@
     "main": "main.js",
     "scripts": {
         "postinstall": "bower install",
+        "dev": "nodemon --exec \"electron . --no-sandbox --trace-warnings --enable-logging=file --log-file=./public/logs/electron_debug.log\"",
         "start": "electron . --no-sandbox --trace-warnings --enable-logging=file --log-file=./public/logs/electron_debug.log",
         "build": "webpack --config webpack.config.js"
     },
