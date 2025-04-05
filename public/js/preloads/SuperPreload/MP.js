@@ -1,10 +1,10 @@
 require('dotenv').config();
 const AppUserSession = require("@config/services/SessionService");
-const { ipcRenderer } = require('electron');
+const { ipcRenderer, ipcMain } = require('electron');
 
 class MP {
     constructor () {
-        this.date = new Date();
+        this.date = new Date(); 
         this.current_directory = process.cwd();
         this.sessionObject = new AppUserSession(); 
         this.session = this.sessionObject.session();
@@ -12,8 +12,29 @@ class MP {
         this.datetime_now = this.date.toISOString().slice(0, 19).replace('T', ' ');
     }
 
-    routerFunc() {
-        console.log("It works!");
+    async ipcRequest(channel, data=undefined) { 
+        const res = new Promise((resolve, reject) => { 
+            const responseHandler = async (event, response) => {
+                ipcRenderer.removeListener(channel, responseHandler); 
+                resolve(response);
+            };
+    
+            ipcRenderer.invoke(channel, data !== undefined ? data : null);
+            ipcRenderer.on(channel, responseHandler);
+        }); 
+
+        return res;
+    }
+
+    ipcListener(route) {
+        if (ipcMain.listenerCount(route)) {
+            return true;
+        }
+        
+        return false;
+    }
+
+    routerFunc() { 
         document.querySelectorAll("a").forEach((link) => {
             if (link) {
                 link.addEventListener("click", (event) => {
