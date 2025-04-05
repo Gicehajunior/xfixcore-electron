@@ -16,6 +16,12 @@ class DashboardController extends XFIXCore {
         super();
         // ANY CONSTRUCTOR LOGIC
     }
+
+    index() {
+        this.route("dashboard", {
+            title: lang.title.login,
+        }); 
+    }
     
 }
 

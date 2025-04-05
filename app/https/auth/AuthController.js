@@ -128,7 +128,7 @@ class AuthController extends XFIXCore {
             };
     
             this.auth.save_session(JSON.stringify(object));
-            this.route("dashboard", {
+            this.route("/dashboard", {
                 title: lang.title.dashboard
             });
     
@@ -152,7 +152,7 @@ class AuthController extends XFIXCore {
         }); 
     }
 
-    async forgotPassword(email = []) {
+    async forgotPassword(email='') {
         if (email.length === 0) {
             return {status: 'fail', message: lang.errors.empty_email};
         }
@@ -165,8 +165,8 @@ class AuthController extends XFIXCore {
             const util = new Util();
             util.select(AuthModel.table, ['*']);
             const rows = await util.where({ email: email });
-    
-            if (rows[0] == undefined) {
+            
+            if (!rows[0]) {
                 return {status: 'fail', message: lang.errors.user_not_found};
             }
             
@@ -187,7 +187,7 @@ class AuthController extends XFIXCore {
                 support_link: 'xfixcore.com',
                 company_name: 'XFIX Inc.'
             }); 
-            console.log(`RECIPIENTS: ${recipients}`);
+            
             const text_message_formart = security_code;
 
             // Send email
@@ -200,8 +200,8 @@ class AuthController extends XFIXCore {
 
             this.post_object = JSON.stringify({"reset_pass_security_code": security_code});
 
-            if (this.session && 'id' in this.session) {
-                const update_response = await util.update_resource_by_id(AuthModel.table, this.post_object, this.session["id"]);
+            if (this.session && 'email' in this.session) {
+                const update_response = await util.update_resource_by_id(AuthModel.table, this.post_object, this.session.id);
 
                 if (update_response) {
                     this.route("auth.resetpassword", {
@@ -228,8 +228,8 @@ class AuthController extends XFIXCore {
         try { 
             const util = new Util();
             await util.select(AuthModel.table, ['*']);
-            const rows = await util.where({ email: this.session["email"] });
-            const userRow = rows[0];
+            const rows = await util.where({ email: this.session.email });
+            const userRow = util.first(rows);
             
             if (!userRow) {
                 return { status: 'fail', message: lang.errors.user_not_exists };
@@ -242,7 +242,7 @@ class AuthController extends XFIXCore {
             if (object.password !== object.confirm_password) {
                 return { status: 'fail', message: lang.errors.password_mismatch };
             }
-    
+
             const saltRounds = 10;
             const salt = await bcrypt.genSalt(saltRounds);
             const hash = await bcrypt.hash(object.password, salt);
@@ -257,7 +257,7 @@ class AuthController extends XFIXCore {
                 "updated_at": this.updated_at
             });
             
-            const updateResponse = await util.update_resource_by_id(AuthModel.table, this.post_object, this.session["id"]);
+            const updateResponse = await util.update_resource_by_id(AuthModel.table, this.post_object, this.session.id);
             
             if (!updateResponse) {
                 return { status: 'fail', message: lang.errors.reset_password };
