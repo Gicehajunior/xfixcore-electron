@@ -27,13 +27,19 @@ class Auth extends MP {
         const table_object = JSON.stringify({
             sql_query: sql_query,
             table: table
-        });
-        ipcRenderer.invoke('createTable', table_object);
+        }); 
 
-        ipcRenderer.once("create-table", async (event, response) => { 
-            var response = JSON.parse(response);  
-            console.log(`DB Users Table Creation: ${response.status}`); 
-        });
+        try {
+            const response = this.ipcRequest("/createTable", table_object); 
+            if (response) {
+                response.then(res => {
+                    const response = JSON.parse(res); 
+                    console.log(`DB Users Table Creation: ${response.status}`); 
+                });  
+            }
+        } catch (error) {
+            console.log(error.message || "An error Occurred");
+        }
     }
 
     async authUsers() {
@@ -71,26 +77,28 @@ class Auth extends MP {
                     "created_at": "",
                     "updated_at": ""
                 };
-
-                ipcRenderer.invoke("registerUser", JSON.stringify(usersInfo));
-
-                ipcRenderer.once("save-users", async (event, response) => {
-                    var response = JSON.parse(response);
-
-                    if (response.status == 'OK') {
-                        this.clearFormInputs();
-                        users_message.innerHTML = response.message;
-                        users_message.style.color = "green"; 
-                    }
-                    else {
-                        users_message.innerHTML = response.message;
-                        users_message.style.color = "red";
-                    }
-
-                    register_btn.innerHTML = lang.register_button_innerhtml_context;
-                    register_btn.disabled = false;
-                });
                 
+                try {
+                    let response = await this.ipcRequest("/registerUser", JSON.stringify(usersInfo));
+                    if (response) {
+                        response = JSON.parse(response);
+
+                        if (response.status == 'OK') {
+                            this.clearFormInputs();
+                            users_message.innerHTML = response.message;
+                            users_message.style.color = "green"; 
+                        }
+                        else {
+                            users_message.innerHTML = response.message;
+                            users_message.style.color = "red";
+                        }
+    
+                        register_btn.innerHTML = lang.register_button_innerhtml_context;
+                        register_btn.disabled = false;
+                    }
+                } catch (error) {
+                    console.log(error.message || "An error Occurred");
+                } 
             });
         }
         else if (document.body.contains(login_user_form)) {
@@ -100,30 +108,33 @@ class Auth extends MP {
                 const usersInfo = {
                     "email": email.value,
                     "password": password.value,
-                };
+                }; 
 
-                ipcRenderer.invoke("loginUser", JSON.stringify(usersInfo));
+                try {
+                    let response = await this.ipcRequest("/loginUser", JSON.stringify(usersInfo));
+                    if (response) {
+                        response = JSON.parse(response);  
+                        if (response.status == 'OK') {
+                            users_message.innerHTML = response.message;
+                            users_message.style.color = "green";
+                            this.clearFormInputs(); 
+                        }
+                        else {
+                            users_message.innerHTML = response.message;
+                            users_message.style.color = "red";
+                            login_user_btn.disabled = false;
+                        } 
 
-                ipcRenderer.once("login-response", async (event, response) => {
-                    var response = JSON.parse(response);  
-                    if (response.status == 'OK') {
-                        users_message.innerHTML = response.message;
-                        users_message.style.color = "green";
-                        this.clearFormInputs(); 
+                        login_user_btn.innerHTML = lang.login_button_innerhtml_context; 
                     }
-                    else {
-                        users_message.innerHTML = response.message;
-                        users_message.style.color = "red";
-                        login_user_btn.disabled = false;
-                    } 
-
-                    login_user_btn.innerHTML = lang.login_button_innerhtml_context; 
-                }); 
+                } catch (error) {
+                    console.log(error.message || "An error Occurred");
+                }
             });
         }
         else if (document.body.contains(forgot_password)) {
             request_security_code_btns.forEach(request_security_code_btn => {
-                request_security_code_btn.addEventListener('click', () => {
+                request_security_code_btn.addEventListener('click', async () => {
                     request_security_code_btn.disabled = true;
                     if (email.value.length == 0) {
                         alert({
@@ -134,36 +145,39 @@ class Auth extends MP {
                         request_security_code_btn.innerHTML = lang.forgot_password_button_innerhtml_context;
                         request_security_code_btn.disabled = false;
                     }
-                    else {
-                        ipcRenderer.invoke("/forgot-password", email.value);
+                    else { 
+                        try {
+                            let response = await (new Auth()).ipcRequest("/forgot-password", email.value);
+                            if (response) {
+                                response = JSON.parse(response);  
+                                if (response.status == 'OK') {
+                                    alert({
+                                        status: 'info',
+                                        title: lang.notification_title.forgot_password_notification_title,
+                                        message: response.message
+                                    });
+                                }
+                                else {
+                                    alert({
+                                        status: 'error',
+                                        title: lang.notification_title.forgot_password_notification_title,
+                                        message: response.message
+                                    });
+                                }
 
-                        ipcRenderer.once("forgot-password-response", async (event, response) => {
-                            var response = JSON.parse(response);  
-                            if (response.status == 'OK') {
-                                alert({
-                                    status: 'info',
-                                    title: lang.notification_title.forgot_password_notification_title,
-                                    message: response.message
-                                });
+                                request_security_code_btn.innerHTML = lang.forgot_password_button_innerhtml_context;
+                                request_security_code_btn.disabled = false; 
                             }
-                            else {
-                                alert({
-                                    status: 'error',
-                                    title: lang.notification_title.forgot_password_notification_title,
-                                    message: response.message
-                                });
-                            }
-
-                            request_security_code_btn.innerHTML = lang.forgot_password_button_innerhtml_context;
-                            request_security_code_btn.disabled = false;
-                        });
+                        } catch (error) {
+                            console.log(error.message || "An error Occurred");
+                        }
                     }
                 });
             });
         }
         else if (document.body.contains(reset_password)) {
             reset_password_btns.forEach(reset_password_btn => {
-                reset_password_btn.addEventListener('click', () => {
+                reset_password_btn.addEventListener('click', async () => {
                     reset_password_btn.disabled = true;
                     const security_code = document.getElementById("security-code");
                     const confirm_password = document.getElementById("confirm-password");
@@ -182,24 +196,26 @@ class Auth extends MP {
                             "security_code": security_code.value,
                             "password": password.value,
                             "confirm_password": confirm_password.value
-                        });
+                        }); 
 
-                        console.log(reset_password_post_object)
+                        try {
+                            let response = await (new Auth()).ipcRequest("/reset-password", reset_password_post_object);
+                            if (response) {
+                                response = JSON.parse(response);  
+                                if (response.status == 'fail')  {
+                                    alert({
+                                        status: 'error',
+                                        title: lang.notification_title.reset_password_notification_title,
+                                        message: response.message
+                                    });
+                                } 
 
-                        ipcRenderer.invoke("/reset-password", reset_password_post_object);
-                        ipcRenderer.once("reset-password-response", async (event, response) => {
-                            var response = JSON.parse(response);  
-                            if (response.status == 'fail')  {
-                                alert({
-                                    status: 'error',
-                                    title: lang.notification_title.reset_password_notification_title,
-                                    message: response.message
-                                });
-                            } 
-
-                            reset_password_btn.innerHTML = lang.reset_password_button_innerhtml_context;
-                            reset_password_btn.disabled = false;
-                        });
+                                reset_password_btn.innerHTML = lang.reset_password_button_innerhtml_context;
+                                reset_password_btn.disabled = false;
+                            }
+                        } catch (error) {
+                            console.log(error.message || "An error Occurred");
+                        }
                     }
                 });
             });
@@ -210,8 +226,15 @@ class Auth extends MP {
         const logoutBtn = document.getElementById("logout-btn");
 
         if (document.body.contains(logoutBtn)) {
-            logoutBtn.addEventListener('click', () => {
-                ipcRenderer.invoke("/logoutUser");
+            logoutBtn.addEventListener('click', async () => { 
+                try {
+                    let response = await (new Auth()).ipcRequest("/logoutUser");
+                    if (response) { 
+                        console.log("Logged out successfully!");
+                    }
+                } catch (error) {
+                    console.log(error.message || "An error Occurred");
+                }
             });
         }
     }
