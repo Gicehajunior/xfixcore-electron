@@ -1,5 +1,6 @@
 const { Model } = require('sequelize');
-const db = require('@config/database/Database');
+const { Util } = require('@config/app/utils');
+const DB = require('@config/database/Database');
 
 class AppModel extends Model { 
 
@@ -9,7 +10,7 @@ class AppModel extends Model {
      * @param {Sequelize} sequelize - The Sequelize instance
      */
     static initModel(sequelize) { 
-        return super.init(db.mutateFields(
+        return super.init(Util.mutateFields(
             this.fields, 
             this.nullableFields
         ), {
@@ -21,7 +22,6 @@ class AppModel extends Model {
             timestamps: true
         });
     }
-
 
     /**
      * Method to be overridden by child classes for associations

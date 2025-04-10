@@ -4,10 +4,10 @@ const bcrypt = require('bcrypt');
 const EmailValidator = require('validator');  
 const {phone} = require('phone'); 
 const lang = require("@helper/lang");
-const AuthModel = require("@models/AuthModel");
-const Mailer = require("@config/services/MailerService"); 
 const Util = require("@utils/Utils"); 
 const AuthUtil = require('@utils/AuthUtil');
+const AuthModel = require("@models/AuthModel");
+const Mailer = require("@config/services/MailerService"); 
 const XFIXCore = require("@config/app/XFIXCore");  
 
 class AuthController extends XFIXCore {
