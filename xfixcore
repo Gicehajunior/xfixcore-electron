@@ -1,0 +1,10 @@
+#!/usr/bin/env node
+require('module-alias/register');
+const XfixCoreCLI = require('@config/services/XfixCoreCLI');
+
+// Create and call the cli respectively.
+(async () => {
+    const cli = await XfixCoreCLI.create();
+    cli.registerAllCommands();
+    cli.parseArguments();
+})();

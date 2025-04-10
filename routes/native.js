@@ -10,10 +10,7 @@ const RouterService = require("@config/services/RouterService");
  */
 const Routes = (BrowserWindow, ipcMain) => {    
     const Router = new RouterService(BrowserWindow, ipcMain); 
-
-    // DB table routes
-    Router.post('/createTable', 'AuthController@createTable'); 
-
+    
     // Auth routes
     Router.get('/signup', 'AuthController@registerUser'); 
     Router.get('/login', 'AuthController@loginUser'); 

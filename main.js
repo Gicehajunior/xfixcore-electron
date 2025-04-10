@@ -2,15 +2,15 @@
 require('module-alias/register');
 require('dotenv').config(); 
 const fs = require('fs');
-const path = require('path');
-const electron = require("electron"); 
+const path = require('path'); 
 const lang = require("@helper/lang");
 const Routes = require('@routes/native');
 const config = require('@config/app/config');
 const XFIXCore = require('@config/app/XFIXCore');
-const {Utils} = require('@config/app/utils');
+const { Utils } = require('@config/app/utils');
+const database = require('@config/database/Database');
 const ExceptionHandler = require('@app/Exceptions/handler'); 
-const { app, contextBridge, BrowserWindow, ipcMain, session, protocol } = electron; 
+const { app, contextBridge, BrowserWindow, ipcMain, session, protocol } = require("electron"); 
 
 const createWindow = () => {
   // Create the browser window.

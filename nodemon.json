@@ -1,0 +1,7 @@
+{
+    "ignore": [
+        ".env",
+        "*.log",
+        "public/Session Storage"
+    ]
+  }
