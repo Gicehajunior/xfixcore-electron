@@ -7,5 +7,6 @@ public/bootstrap
 public/assets/jquery
 config/database/dump/*.sql
 config/database/dump/*.db
+config/database/migrations/*.js
 public/logs/electron_debug.log
 public/Session Storage
