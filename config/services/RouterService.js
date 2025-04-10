@@ -17,11 +17,11 @@ class RouterService {
         this.get('/alertMessage', 'helper@showAlertDialog');
     }
 
-    post(route, controller, response_medium = undefined) {  
+    post(route, controller, response_medium = undefined) {   
         this.post_route(route, controller, response_medium);
     }
 
-    get(route, controller, response_medium = undefined) {
+    get(route, controller, response_medium = undefined) { 
         this.get_route(route, controller, response_medium);
     }
     
@@ -29,7 +29,9 @@ class RouterService {
         if (!this.ipcMain.listenerCount(route)) {
             this.ipcMain.handle(route, async (event, data) => {  
                 try {
-                    this.route = route;
+                    response_medium = (response_medium !== undefined) 
+                        ?   response_medium 
+                        :   (route ? route : '');  
                     this.route_process(controller, response_medium, event, data);
                 } catch (error) {
                     console.log(error);
@@ -42,7 +44,9 @@ class RouterService {
         if (!this.ipcMain.listenerCount(route)) {
             this.ipcMain.once(route, async (event, data) => {  
                 try {
-                    this.route = route; 
+                    response_medium = (response_medium !== undefined) 
+                        ?   response_medium 
+                        :   (route ? route : ''); 
                     this.route_process(controller, response_medium, event, data);
                 } catch (error) {
                     console.log(error);
@@ -96,8 +100,7 @@ class RouterService {
     run_response_channel(event, response_medium = undefined, response = undefined) { 
         if (response instanceof Promise) {
             Promise.resolve(response).then(value => {  
-                if (value) {
-                    value.route = this.route;
+                if (value) {  
                     event.sender.send(response_medium, `${JSON.stringify(value)}`);
                 } 
             }); 

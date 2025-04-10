@@ -1,102 +1,220 @@
- const sqlite3 = require('sqlite3').verbose();
-const mysql = require('mysql');
+const fs = require('fs');
+const path = require('path');
+const { Sequelize, DataTypes } = require('sequelize');
+const app_config = require('@config/app/config'); 
+const database_config = require('@config/database/config'); 
 
 class Database {
-    constructor(database_connection='', host_name='', database_port='', database_name='', database_username='', database_password='') {
-        this.database_connection = database_connection;
-        this.host_name = host_name; 
-        this.database_port = database_port;
-        this.database_name = database_name;
-        this.database_username = database_username,
-        this.database_password = database_password;  
+    /**
+     * Initializes a Database class instance with multiple Sequelize connections.
+     * Loads configurations from '@config/database/config.js' and creates Sequelize instances.
+     * 
+     * @param {object} options - Optional Sequelize-specific configuration overrides.
+     * @param {object} logger - Optional custom logger (defaults to console).
+     */
+    constructor(set_db = app_config.DATABASE.DB_CONN, options = {}, logger = console) {
+        if (Database.instance) return Database.instance;
+        
+        // Initialize singleton instance
+        Database.instance = this;
+
+        this.debug = app_config.APP.APP_DEBUG;
+        
+        this.logger = logger;
+        this.databases = {};
+        this.set_db = set_db;
+        this._setupDatabases(options);
     }
 
-    create_mysql_database() { 
-        const connection = mysql.createConnection({
-            host: this.host_name,
-            user: this.database_username,
-            password: this.database_password
-        });
+    /**
+     * Sets up Sequelize connections for multiple databases.
+     * Loops through configuration and initializes Sequelize for set database.
+     * 
+     * @param {object} options - Configuration options to override default settings for connections.
+     */
+    _setupDatabases(options = {}) { 
+        for (const dbName in database_config) {
+            if (dbName == this.set_db) {
+                const dbConfig = database_config[dbName];
         
-        const connection_response_promise = new Promise(resolve => {
-            connection.connect((err) => {
-                if (err) {
-                     
-                    resolve(err.message);
-                } 
-                else {
-                    connection.query(`CREATE DATABASE ${this.database_name}`, (err, result) => {
-                        if (err) {
-                            resolve(err);
-                        } 
-                        else { 
-                            resolve(`${this.database_name} database created`);
-                        }
-                    });
-                } 
-            });
-        }); 
+                let sequelizeInstance;
+        
+                if (dbConfig.DB_CONN === 'sqlite') {
+                    let storage = dbConfig.SQLITE_STORAGE || ':memory:';
+                    storage = (storage !== ':memory:') ? path.join(storage, dbConfig.DB_NAME) : storage;
 
-        return connection_response_promise;
+                    sequelizeInstance = new Sequelize({
+                        dialect: 'sqlite',
+                        storage: storage,
+                        logging: this.debug === 'true' ? this.logger.log : false,
+                        ...options
+                    });
+                } else {
+                    const sequelizeOptions = this._buildSequelizeOptions(dbConfig, options); 
+
+                    sequelizeInstance = new Sequelize(
+                        dbConfig.DB_NAME,
+                        dbConfig.DB_USER,
+                        dbConfig.DB_PASS ?? null,
+                        sequelizeOptions
+                    );
+                }
+        
+                this.databases[dbName] = sequelizeInstance;
+                this.databases[dbName].models = {};
+                this._loadModels(dbName);
+            }
+        }
+    }
+
+    /**
+     * Constructs Sequelize connection options.
+     * 
+     * @param {object} dbConfig - Database configuration (from @config/database/config.js).
+     * @param {object} options - Optional configuration overrides for Sequelize options.
+     * @returns {object} Sequelize connection options.
+     */
+    _buildSequelizeOptions(dbConfig, options) {
+        const sequelizeOptions = {
+            host: dbConfig.DB_HOST,
+            port: dbConfig.DB_PORT,
+            dialect: dbConfig.DB_CONN,
+            logging: this.debug === 'true' ? this.logger.log : false,
+            pool: {
+                max: dbConfig.POOL.max || 10,
+                min: dbConfig.POOL.min || 0,
+                acquire: dbConfig.POOL.acquire || 30000,
+                idle: dbConfig.POOL.idle || 10000
+            },
+            dialectOptions: {},
+            timezone: app_config.DATABASE.MYSQL_TIMEZONE || '+03:00',
+            ...options
+        };
+
+        // SSL options for MySQL/Postgres connections
+        if (dbConfig.DB_SSL) {
+            sequelizeOptions.dialectOptions.ssl = {
+                require: true,
+                rejectUnauthorized: false
+            };
+        }
+
+        // Handle replication setup if needed
+        if (dbConfig.REPLICATION) {
+            sequelizeOptions.replication = dbConfig.REPLICATION;
+        }
+
+        return sequelizeOptions;
     }
     
-
-    mysql_connection() { 
-        const connection = mysql.createConnection({
-            host: this.host_name,
-            user: this.database_username,
-            password: this.database_password,
-            database: this.database_name
-        });
+    /**
+     * Loads models dynamically for a given database connection.
+     * Assumes models are located in the 'models' directory.
+     * 
+     * @param {string} dbName - The name of the database (e.g., 'mysql', 'postgres').
+     */
+    _loadModels(dbName) {
         
-        const connection_response_promise = new Promise(resolve => { 
-            connection.connect((err) => {
-                if (err) {  
-                    resolve(err.message);
+        const modelsDirectory = app_config.PATHS.MODELS; // Path to models directory
+        
+        try {
+            this.getSequelize().then((sequelize) => { 
+                if (!fs.existsSync(modelsDirectory)) throw new Error(`Models directory does not exist at ${modelsDirectory}`);
+
+                const modelFiles = fs.readdirSync(modelsDirectory);
+                
+                modelFiles.forEach(file => { 
+                    if (file.endsWith('.js')) {
+                        try { 
+                            const model = require(path.join(modelsDirectory, file));
+
+                            // Initialize the model (check if it's a subclass of AppModel)
+                            if (model.initModel) {
+                                sequelize.models[model.name] = model.initModel(sequelize);
+                            } else {
+                                console.warn(`Model ${file} does not have an initModel method.`);
+                            }
+                        } catch (err) {
+                            console.error(`Error loading model from file ${file}:`, err.message);
+                        }
+                    }
+                });
+
+                // Apply associations (if any) after loading all models
+                Object.values(this.databases[dbName].models).forEach(model => {
+                    if (model.associate) {
+                        try {
+                            model.associate(this.databases[dbName].models);
+                        } catch (err) {
+                            console.error(`Error applying associations for model ${model.name}:`, err.message);
+                        }
+                    }
+                });
+            });
+        } catch (err) {
+            console.error(`Error loading models for database ${dbName}:`, err.message);
+        }
+    }
+
+
+    /**
+     * Mutates the fields into defined Sequelize columns
+     * 
+     * @param {Object} fields - Object where keys are field names, values are string types, DataTypes, or config objects
+     * @returns {Object} Sequelize-compatible column fields
+     */
+    mutateFields(fields, nullableFields=[]) {
+        const fieldDefinitions = {}; 
+
+        if (fields) {
+            Object.entries(fields).forEach(([field, config]) => { 
+                if (typeof config == 'string') {
+                    fieldDefinitions[field] = {
+                        type: DataTypes[config.toUpperCase()],
+                        allowNull: nullableFields.includes(field)
+                    };
                 }
-                else {
-                    console.log(`Mysql Database Connected on Port ${this.database_port}!`); 
-                    resolve(connection);
+                else if (typeof config === 'function' && config.key) {
+                    fieldDefinitions[field] = {
+                        type: config,
+                        allowNull: nullableFields.includes(field)
+                    };
+                }
+                else if (typeof config === 'object' && config.type) {
+                    fieldDefinitions[field] = {
+                        ...config,
+                        allowNull: config.allowNull ?? nullableFields.includes(field)
+                    };
                 }
             });
-        });
-
-        return connection_response_promise;
-    }
-
-    sqlite3_connection(db_name) {  
-        const db = new sqlite3.Database(db_name ? `config/database/dump/${db_name}.db` : ':memory:', sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE, 
-        (err) => { 
-            if (err) {
-                
-                console.log(err);
-                if (err.message == "SQLITE_CANTOPEN: unable to open database file") {
-                    db.run(`CREATE DATABASE [${db_name}]`);
-                    
-                    return db;
-                }
-
-                return err.message;
-            } 
-        });
-        
-        return db
-    }
-
-    initDbConnection() {   
-        let connection_response = undefined;
-
-        if (process.env.DB_CONNECTION == "mysql") {
-            connection_response = this.mysql_connection(process.env.DB_NAME); 
         }
-        else if (process.env.DB_CONNECTION == "sqlite") {
-            connection_response = this.sqlite3_connection(process.env.DB_NAME); 
+
+        return fieldDefinitions;
+    }
+
+    /**
+     * Retrieves the Sequelize instance for a specified database connection.
+     * 
+     * @param {undefined} dbName - The database connection to retrieve ('mysql', 'postgres', etc.).
+     * @returns {Sequelize} Sequelize instance for the specified database connection.
+     */
+    async getSequelize(dbName = undefined) {
+        let db = dbName ?? app_config.DATABASE.DB_CONN;
+
+        if (!this.databases[db]) {
+            this.logger.error(`No database connection found for ${db}`);
         } 
 
-        return connection_response
+        if (this.debug) {
+            await this.databases[db].authenticate()
+                .then(() => this.logger.log(`${db} connected successfully.`))
+                .catch(err => {
+                    this.logger.error(`Unable to connect to ${db}:`, err.message);
+                });
+        }
+        
+        return this.databases[db];
     }
 }
 
-module.exports = Database;
-
-
+module.exports = new Database();
