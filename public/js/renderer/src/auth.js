@@ -3,8 +3,7 @@ class Auth {
         this.api = api; 
     }
 
-    auth() { 
-        this.api.auth.createUsersTable();
+    auth() {  
         this.api.onSessionData(data => { 
             if (data.route && data.route.includes('auth')) { 
                 this.api.auth.authUsers();

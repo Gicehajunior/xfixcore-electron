@@ -12,35 +12,6 @@ class Auth extends MP {
     index() {  
         // Add any logic to setup home window on-open event
     }
-    
-    async createUsersTable() {
-        let sql_query = undefined;
-        const table = "users";
-
-        if (process.env.DB_CONNECTION == "sqlite") {
-            sql_query = `CREATE TABLE IF NOT EXISTS ${table} (whoiam INTEGER NOT NULL, username VARCHAR(15) NOT NULL, email VARCHAR(50) NULL, contact VARCHAR(13) NULL, password LONGTEXT NOT NULL, reset_pass_security_code INTEGER NULL, created_at DATETIME NULL, updated_at DATETIME NULL)`;
-        }
-        else if (process.env.DB_CONNECTION == "mysql") {
-            sql_query = `CREATE TABLE IF NOT EXISTS ${table} (id INTEGER NOT NULL PRIMARY KEY AUTO_INCREMENT, whoiam INTEGER NOT NULL, username VARCHAR(15) NOT NULL, email VARCHAR(50) NULL, contact VARCHAR(13) NULL, password LONGTEXT NOT NULL, reset_pass_security_code INTEGER NULL, created_at DATETIME NULL, updated_at DATETIME NULL)`;
-        }
-
-        const table_object = JSON.stringify({
-            sql_query: sql_query,
-            table: table
-        }); 
-
-        try {
-            const response = this.ipcRequest("/createTable", table_object); 
-            if (response) {
-                response.then(res => {
-                    const response = JSON.parse(res); 
-                    console.log(`DB Users Table Creation: ${response.status}`); 
-                });  
-            }
-        } catch (error) {
-            console.log(error.message || "An error Occurred");
-        }
-    }
 
     async authUsers() {
         const signup_user_form = document.querySelector(".signup_user_form")
@@ -64,18 +35,17 @@ class Auth extends MP {
             register_btn.addEventListener("click", async (event) => {
                 event.preventDefault();
                 register_btn.disabled = true;
+                const fullname = document.getElementById("fullname");
                 const username = document.getElementById("username");
                 const tel = document.getElementById("tel");
 
                 const usersInfo = {
-                    "whoiam": 2,
+                    "fullname": fullname.value,
                     "username": username.value,
                     "email": email.value,
                     "contact": tel.value,
-                    "password": password.value,
-                    "reset_pass_security_code": 0,
-                    "created_at": "",
-                    "updated_at": ""
+                    "password": password.value, 
+                    "rolename": 'user'
                 };
                 
                 try {
