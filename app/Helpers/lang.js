@@ -1,6 +1,3 @@
-const AppUserSession = require("@config/services/SessionService");
-var session = (new AppUserSession()).session();  
-
 module.exports = {
     button_click_innerhtml_context: "Please Wait...",
     app_name: "XFIX Core",
@@ -49,7 +46,6 @@ module.exports = {
         create_account: "Registration Success",
         reset_password: `Password Reset successfully!`
     },
-    dashboard_welcome_notification: `Hello ${session == undefined ? null : session['username']}. Welcome back to the system.\n\n For any Assistance in using the system, Please contact system administrator.\n\n Thank you!`,
     footer_rights_tag_line: `&copy;${new Date().getFullYear()} All rights reserved.`,
     footer_app_name: "Electron <strong style='color: green'>XFIX Core.</strong>",
     current_year: new Date().getFullYear(),

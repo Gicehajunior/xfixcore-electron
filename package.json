@@ -7,7 +7,7 @@
         "postinstall": "bower install",
         "dev": "nodemon --exec \"electron . --no-sandbox --trace-warnings --enable-logging=file --log-file=./public/logs/electron_debug.log\"",
         "start": "electron . --no-sandbox --trace-warnings --enable-logging=file --log-file=./public/logs/electron_debug.log",
-        "build": "webpack --config webpack.config.js"
+        "build": "chmod +x xfixcore && npm unlink -g xfixcore && npm link && webpack --config webpack.config.js"
     },
     "authors": [
         {

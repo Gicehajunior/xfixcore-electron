@@ -1,26 +1,47 @@
-const fs = require('fs');
+const fs = require('fs').promises;
 const path = require('path');
 const { app } = require('electron');
 
-class Store {
+class StoreService {
     constructor(opts) {
         this.opts = opts;
-        // Renderer process has to get `app` module via `remote`, 
-        // whereas the main process can get it directly
-        // app.getPath('userData') will return a string of the user's app data directory path.
-        this.userDataPath = this.getAppBasePath(); 
         this.current_working_dir = process.cwd();
-        
-        // We'll use the `configName` property to set the file name and 
-        // path.join to bring it all together as a string
-        this.path = path.join(this.userDataPath, `${this.opts.folder ? this.opts.folder + '/' : ''}${this.opts.configName}.json`);
-        
-        if (!fs.existsSync(`${this.userDataPath}${this.opts.folder ? this.opts.folder + '/' : ''}`)) {
-            this.create_dir_if_not_exists(`${this.current_working_dir}/public`, this.opts.folder);
-            this.path = path.join(`${this.current_working_dir}/public`, `${this.opts.folder ? this.opts.folder + '/' : ''}${this.opts.configName}.json`);
-        } 
+        this.userDataPath = this.getAppBasePath();
+    }
 
-        this.data = this.parseDataFile(this.path, this.opts.defaults);
+    async init() {
+        this.path = path.join(
+            this.userDataPath,
+            `${this.opts.folder ? this.opts.folder + '/' : ''}${this.opts.configName}.json`
+        );
+    
+        const folderPath = path.join(this.userDataPath, this.opts.folder || '');
+        const fallbackPath = path.join(
+            this.current_working_dir, 'public',
+            `${this.opts.folder ? this.opts.folder + '/' : ''}${this.opts.configName}.json`
+        );
+    
+        const folderExists = await this.fileExists(folderPath);
+    
+        if (!folderExists) {
+            await this.create_dir_if_not_exists(
+                path.join(this.current_working_dir, 'public'),
+                this.opts.folder
+            );
+            this.path = fallbackPath;
+        }
+    
+        this.data = await this.parseDataFile(this.path, this.opts.defaults);
+        return this;
+    }
+    
+    async fileExists(filePath) {
+        try {
+            await fs.access(filePath);
+            return true;
+        } catch {
+            return false;
+        }
     }
 
     getAppBasePath = () => {
@@ -41,14 +62,16 @@ class Store {
         else if (process.platform === 'win32') { 
             return `${process.env.APPDATA}\\${process.env.APP_NAME}\\`
         }
+
+        return app.getPath('userData');
     }
 
     get_data_path () {
         return this.path;
     }
 
-    create_dir_if_not_exists(root_path, path_getting_created) {
-        fs.mkdir(path.join(root_path, `${path_getting_created}`),
+    async create_dir_if_not_exists(root_path, path_getting_created) {
+        await fs.mkdir(path.join(root_path, `${path_getting_created}`),
             { recursive: true }, (err) => {
             if (err) {
                 console.error(err);
@@ -63,40 +86,27 @@ class Store {
         return data;
     }
     
-    // ...and this will set it
-    set(post_object) { 
+    async set(post_object) {
         const object = JSON.parse(post_object);
         const object_array = Object.entries(object);
-
+    
         this.data = this.data ? this.data : {};
-
-        object_array.forEach(element => { 
-            this.data[element[0]] = element[1];  
+    
+        object_array.forEach(element => {
+            this.data[element[0]] = element[1];
         });
-
-        let write;
-
+    
         try {
-            // Wait, I thought using the node.js' synchronous APIs was bad form?
-            // We're not writing a server so there's not nearly the same IO demand on the process
-            // Also if we used an async API and our app was quit before the asynchronous 
-            // write had a chance to complete,
-            // we might lose that data. Note that in a real app, we would try/catch this.
-            write = fs.writeFileSync(this.path, JSON.stringify(this.data));
+            await fs.writeFile(this.path, JSON.stringify(this.data, null, 2));
+            return true;
         } catch (error) {
-            write = error;
+            return error;
         }
-
-        return write;
     }
 
-    parseDataFile(filePath, defaults) {
-        // We'll try/catch it in case the file doesn't exist yet, 
-        // which will be the case on the first application run.
-        // `fs.readFileSync` will return a JSON string which we then 
-        // parse into a Javascript object
+    async parseDataFile(filePath, defaults) { 
         try {
-            const data = fs.readFileSync(filePath);
+            const data = await fs.readFile(filePath);
 
             return JSON.parse(data);
         } catch(error) {
@@ -106,4 +116,4 @@ class Store {
     }
 } 
 
-module.exports = Store;
+module.exports = StoreService;

@@ -1,13 +1,10 @@
-require('dotenv').config();
-const AppUserSession = require("@config/services/SessionService");
+require('dotenv').config(); 
 const { ipcRenderer, ipcMain } = require('electron');
 
 class MP {
     constructor () {
         this.date = new Date(); 
-        this.current_directory = process.cwd();
-        this.sessionObject = new AppUserSession(); 
-        this.session = this.sessionObject.session();
+        this.current_directory = process.cwd();  
         this.windowLocation = window.location.href;
         this.datetime_now = this.date.toISOString().slice(0, 19).replace('T', ' ');
     }

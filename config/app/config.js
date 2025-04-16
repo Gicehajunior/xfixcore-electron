@@ -41,6 +41,8 @@ module.exports = {
         DB_USER: process.env.DB_USER || 'root',
         DB_PASS: process.env.DB_PASS || '',
         DB_SSL: process.env.DB_SSL || false,
+        OPTIONS: {},
+        LOGGER: undefined,
         MYSQL_TIMEZONE: '+03:00'
     },    
     AUTH: {

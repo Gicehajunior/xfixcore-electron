@@ -15,9 +15,8 @@ class MigrationService {
         this.sequelize = null;
     } 
     
-    async init() {
-        const db = new Database(config.DATABASE.DB_CONN);
-        this._sequelize = await db.getSequelize();
+    async init() { 
+        this._sequelize = await Database.getSequelize('migration');
         this.queryInterface = this._sequelize.getQueryInterface();
         this.sequelize = this._sequelize.constructor;
         return this;
