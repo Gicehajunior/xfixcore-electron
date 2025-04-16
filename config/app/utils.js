@@ -1,5 +1,6 @@
 
 const fs = require("fs"); 
+const { DataTypes } = require('sequelize');
 const config = require("@config/app/config");
 const { ipcRenderer, BrowserWindow } = require("electron");; 
 
