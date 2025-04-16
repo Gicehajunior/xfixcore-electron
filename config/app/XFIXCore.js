@@ -7,22 +7,36 @@ const mail = require('./mail');
 const lang = require("@helper/lang");
 const config = require("@config/app/config");
 const { Utils, Util } = require("@config/app/utils");
-const AppUserSession = require("@config/services/SessionService"); 
+const AuthService = require("@config/services/AuthService");
+const StoreService = require("@config/services/StoreService");
 const { ipcMain, contextBridge, ipcRenderer, BrowserWindow } = require("electron"); 
 
 class XFIXCore {
-    constructor() {
-        this.win = undefined; 
+    constructor() {  
+        this.win = undefined;  
         this.date = new Date(); 
         this.post_object = undefined;
         this.country = config.APP.COUNTRY_CODE; 
         this.current_directory = process.cwd();  
-        this.database_type = process.env.DB_CONNECTION; 
-        
-        this.auth = new AppUserSession();
-        this.session = this.auth.session();
+        this.database_type = process.env.DB_CONNECTION;  
         this.datetime_now = this.created_at = this.updated_at =
              Util.dateToIsoStrFormat(this.date); 
+    }
+
+    async auth() {    
+        try {
+            const storeService = await new StoreService({
+                folder: "Session Storage",
+                type: "login_user",
+                configName: "eab-session"
+            }).init();
+    
+            const instance = new AuthService(storeService); 
+            return instance;
+        } catch (error) {
+            console.error("Auth initialization failed:", error);
+            throw error;
+        }
     }
 
     async route(route, data = {}) {  

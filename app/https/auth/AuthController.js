@@ -128,8 +128,10 @@ class AuthController extends XFIXCore {
                 created_at: user.created_at,
                 updated_at: user.updated_at
             };
-    
-            this.auth.save_session(JSON.stringify(sessionObject));
+            
+            (await this.auth()).save_session(JSON.stringify(sessionObject, null, 2)); 
+            this.session = (await this.auth()).session(); 
+
             return this.route("/dashboard", {
                 title: lang.title.dashboard, session: this.session
             }); 
@@ -159,7 +161,7 @@ class AuthController extends XFIXCore {
     
             const security_code = Math.floor(100000 + Math.random() * 900000);
     
-            this.auth.save_session(JSON.stringify({ id: user.id, email: user.email }));
+            await this.auth.save_session(JSON.stringify({ id: user.id, email: user.email }));
     
             const html_message = await this.mail_parse('scode-mail', {
                 notification_title: "Password Reset Code",
@@ -199,6 +201,7 @@ class AuthController extends XFIXCore {
     
         try {
             const util = new AuthUtil();
+            this.session = (await this.auth()).session();
             const user = await util.getUserByEmail(this.session.email);
     
             if (!user) {
@@ -235,7 +238,7 @@ class AuthController extends XFIXCore {
     }
     
     async logoutUser() {   
-        await this.auth.delete_session().then((response) => {
+        (await this.auth()).delete_session().then((response) => {
             console.log(response);
         }).catch(error => {
             console.log(error);
