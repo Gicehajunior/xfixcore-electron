@@ -20,9 +20,10 @@ class Database {
 
         this.debug = app_config.APP.APP_DEBUG;
         
-        this.logger = logger;
         this.databases = {};
         this.set_db = set_db;
+        this.logger = logger;
+        this.channel = 'application';
         this._setupDatabases(options);
     }
 
@@ -118,39 +119,41 @@ class Database {
         const modelsDirectory = app_config.PATHS.MODELS; // Path to models directory
         
         try {
-            this.getSequelize().then((sequelize) => { 
-                if (!fs.existsSync(modelsDirectory)) throw new Error(`Models directory does not exist at ${modelsDirectory}`);
+            if (this.channel == 'application') {
+                this.getSequelize().then((sequelize) => { 
+                    if (!fs.existsSync(modelsDirectory)) throw new Error(`Models directory does not exist at ${modelsDirectory}`);
 
-                const modelFiles = fs.readdirSync(modelsDirectory);
-                
-                modelFiles.forEach(file => { 
-                    if (file.endsWith('.js')) {
-                        try { 
-                            const model = require(path.join(modelsDirectory, file));
+                    const modelFiles = fs.readdirSync(modelsDirectory);
+                    
+                    modelFiles.forEach(file => { 
+                        if (file.endsWith('.js')) {
+                            try { 
+                                const model = require(path.join(modelsDirectory, file));
 
-                            // Initialize the model (check if it's a subclass of AppModel)
-                            if (model.initModel) {
-                                sequelize.models[model.name] = model.initModel(sequelize);
-                            } else {
-                                console.warn(`Model ${file} does not have an initModel method.`);
+                                // Initialize the model (check if it's a subclass of AppModel)
+                                if (model.initModel) {
+                                    sequelize.models[model.name] = model.initModel(sequelize);
+                                } else {
+                                    console.warn(`Model ${file} does not have an initModel method.`);
+                                }
+                            } catch (err) {
+                                console.error(`Error loading model from file ${file}:`, err.message);
                             }
-                        } catch (err) {
-                            console.error(`Error loading model from file ${file}:`, err.message);
                         }
-                    }
-                });
+                    });
 
-                // Apply associations (if any) after loading all models
-                Object.values(this.databases[dbName].models).forEach(model => {
-                    if (model.associate) {
-                        try {
-                            model.associate(this.databases[dbName].models);
-                        } catch (err) {
-                            console.error(`Error applying associations for model ${model.name}:`, err.message);
+                    // Apply associations (if any) after loading all models
+                    Object.values(this.databases[dbName].models).forEach(model => {
+                        if (model.associate) {
+                            try {
+                                model.associate(this.databases[dbName].models);
+                            } catch (err) {
+                                console.error(`Error applying associations for model ${model.name}:`, err.message);
+                            }
                         }
-                    }
+                    });
                 });
-            });
+            }
         } catch (err) {
             console.error(`Error loading models for database ${dbName}:`, err.message);
         }
@@ -159,17 +162,19 @@ class Database {
     /**
      * Retrieves the Sequelize instance for a specified database connection.
      * 
-     * @param {undefined} dbName - The database connection to retrieve ('mysql', 'postgres', etc.).
+     * @param {undefined} channel - The channel to use the getSequelize method (application or migration).
      * @returns {Sequelize} Sequelize instance for the specified database connection.
      */
-    async getSequelize(dbName = undefined) {
-        let db = dbName ?? app_config.DATABASE.DB_CONN;
+    async getSequelize(channel = 'application') {
+        this.channel = channel;
+        this.debug = app_config.APP.APP_DEBUG
+        let db = app_config.DATABASE.DB_CONN;
 
         if (!this.databases[db]) {
             this.logger.error(`No database connection found for ${db}`);
         } 
 
-        if (this.debug) {
+        if (!this.debug) {
             await this.databases[db].authenticate()
                 .then(() => this.logger.log(`${db} connected successfully.`))
                 .catch(err => {
